@@ -1,106 +1,119 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Todo } from '@/store/useTodoStore';
-import { CheckCircleIcon, PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid';
-import clsx from 'clsx';
+import { Todo, useTodoStore } from "@/store/useTodoStore";
+import { useState } from "react";
 
 interface TodoItemProps {
   todo: Todo;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string, title: string) => void;
 }
 
-export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
+export default function TodoItem({ todo }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(todo.title);
+  const [editValue, setEditValue] = useState(todo.title);
+  const { toggleTodo, deleteTodo, editTodo } = useTodoStore();
+
+  const handleToggle = () => {
+    toggleTodo(todo.id, !todo.completed);
+  };
+
+  const handleDelete = () => {
+    deleteTodo(todo.id);
+  };
 
   const handleEdit = () => {
-    const newTitle = editedTitle.trim();
-    if (newTitle && newTitle !== todo.title) {
-      onEdit(todo.id, newTitle);
-    } else {
-      setEditedTitle(todo.title);
+    setIsEditing(true);
+    setEditValue(todo.title);
+  };
+
+  const handleSave = () => {
+    if (editValue.trim()) {
+      editTodo(todo.id, editValue.trim());
+      setIsEditing(false);
     }
+  };
+
+  const handleCancel = () => {
     setIsEditing(false);
+    setEditValue(todo.title);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
   };
 
   return (
-    <div className={clsx(
-      'group flex items-center gap-4 rounded-lg border p-4 shadow-sm transition-colors',
-      'bg-white dark:bg-gray-800 dark:border-gray-700',
-      todo.completed && 'bg-gray-50 dark:bg-gray-900'
-    )}>
-      <button
-        onClick={() => onToggle(todo.id)}
-        className="flex-shrink-0 text-gray-400 hover:text-green-500 dark:text-gray-600 dark:hover:text-green-400"
-        aria-label={todo.completed ? "Mark as incomplete" : "Mark as complete"}
-      >
-        {todo.completed ? (
-          <CheckCircleSolidIcon className="h-6 w-6 text-green-500 dark:text-green-400" aria-hidden="true" />
-        ) : (
-          <CheckCircleIcon className="h-6 w-6" aria-hidden="true" />
-        )}
-      </button>
-
-      {isEditing ? (
-        <div className="flex flex-1 items-center gap-2">
-          <input
-            type="text"
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleEdit()}
-            className="flex-1 rounded-md border-gray-300 bg-white px-3 py-1.5 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            autoFocus
-            aria-label="Edit todo title"
-            placeholder="Enter new title"
-          />
-          <button
-            onClick={handleEdit}
-            className="text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300"
-            aria-label="Save changes"
-          >
-            <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <button
-            onClick={() => {
-              setIsEditing(false);
-              setEditedTitle(todo.title);
-            }}
-            className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-            aria-label="Cancel editing"
-          >
-            <XCircleIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+    <li className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          checked={todo.completed}
+          onChange={handleToggle}
+          className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:border-gray-600"
+        />
+        <div className="flex-1 min-w-0 ml-3">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={handleKeyDown}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              autoFocus
+            />
+          ) : (
+            <p
+              className={`text-sm ${
+                todo.completed
+                  ? "line-through text-gray-500 dark:text-gray-400"
+                  : "text-gray-900 dark:text-white"
+              }`}
+            >
+              {todo.title}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 mt-1">
+            {new Date(todo.createdAt).toLocaleString()}
+          </p>
         </div>
-      ) : (
-        <>
-          <span className={clsx(
-            'flex-1 text-gray-900 dark:text-gray-100',
-            todo.completed && 'text-gray-500 line-through dark:text-gray-400'
-          )}>
-            {todo.title}
-          </span>
-          <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-              aria-label="Edit todo"
-            >
-              <PencilIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <button
-              onClick={() => onDelete(todo.id)}
-              className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-              aria-label="Delete todo"
-            >
-              <TrashIcon className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+        <div className="flex gap-2 ml-4">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleSave}
+                className="p-1 text-indigo-600 hover:text-indigo-800 dark:hover:text-indigo-400"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCancel}
+                className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleEdit}
+                className="p-1 text-indigo-600 hover:text-indigo-800 dark:hover:text-indigo-400"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="p-1 text-red-600 hover:text-red-800 dark:hover:text-red-400"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </li>
   );
 }
