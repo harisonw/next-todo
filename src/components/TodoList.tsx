@@ -10,9 +10,20 @@ export default function TodoList() {
   const { todos, fetchTodos, error, isLoading } = useTodoStore();
 
   useEffect(() => {
+    // Initial fetch
     fetchTodos().catch(() => {
       toast.error("Failed to load todos");
     });
+
+    // Set up polling for new todos
+    const interval = setInterval(() => {
+      fetchTodos().catch(() => {
+        // Silently fail on polling errors to avoid spamming the user
+        console.error("Failed to poll todos");
+      });
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
   }, [fetchTodos]);
 
   if (error) {

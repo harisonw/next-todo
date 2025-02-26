@@ -53,11 +53,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to add todo");
       }
 
-      const newTodo = await response.json();
-      set((state) => ({
-        todos: [newTodo, ...state.todos],
-        isLoading: false,
-      }));
+      // After adding, fetch all todos to ensure we have the latest state
+      await get().fetchTodos();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
     }
@@ -76,11 +73,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to update todo");
       }
 
-      const updatedTodo = await response.json();
-      set((state) => ({
-        todos: state.todos.map((todo) => (todo.id === id ? updatedTodo : todo)),
-        isLoading: false,
-      }));
+      // After toggling, fetch all todos to ensure we have the latest state
+      await get().fetchTodos();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
     }
@@ -97,10 +91,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to delete todo");
       }
 
-      set((state) => ({
-        todos: state.todos.filter((todo) => todo.id !== id),
-        isLoading: false,
-      }));
+      // After deleting, fetch all todos to ensure we have the latest state
+      await get().fetchTodos();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
     }
@@ -119,11 +111,8 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to update todo");
       }
 
-      const updatedTodo = await response.json();
-      set((state) => ({
-        todos: state.todos.map((todo) => (todo.id === id ? updatedTodo : todo)),
-        isLoading: false,
-      }));
+      // After editing, fetch all todos to ensure we have the latest state
+      await get().fetchTodos();
     } catch (error) {
       set({ error: (error as Error).message, isLoading: false });
     }

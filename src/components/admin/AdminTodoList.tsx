@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -17,13 +16,25 @@ interface Todo {
 
 interface AdminTodoListProps {
   initialTodos: Todo[];
+  onTodoChange?: () => void;
 }
 
-export default function AdminTodoList({ initialTodos }: AdminTodoListProps) {
+export default function AdminTodoList({ initialTodos, onTodoChange }: AdminTodoListProps) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const router = useRouter();
+
+  // Add useEffect to refresh todos when needed and set up polling
+  useEffect(() => {
+    loadTodos(selectedUser);
+
+    // Set up polling for new todos
+    const interval = setInterval(() => {
+      loadTodos(selectedUser);
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [initialTodos, selectedUser]); // Refresh when initialTodos or selectedUser changes
 
   const loadTodos = async (userId: string | null = null) => {
     setIsLoading("fetch");
@@ -62,7 +73,12 @@ export default function AdminTodoList({ initialTodos }: AdminTodoListProps) {
         throw new Error("Failed to delete todo");
       }
 
+      // Update local state
       setTodos(todos.filter((todo) => todo.id !== id));
+      
+      // Notify parent of the change
+      onTodoChange?.();
+      
       toast.success("Todo deleted successfully");
     } catch (error) {
       toast.error((error as Error).message);
@@ -117,6 +133,7 @@ export default function AdminTodoList({ initialTodos }: AdminTodoListProps) {
                       type="checkbox"
                       checked={todo.completed}
                       readOnly
+                      title="Todo completion status"
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
                     <p

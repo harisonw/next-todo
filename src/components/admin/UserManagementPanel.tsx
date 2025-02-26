@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 interface User {
@@ -16,14 +16,21 @@ interface User {
 
 interface UserManagementPanelProps {
   users: User[];
+  onUserChange?: () => void;
 }
 
 export default function UserManagementPanel({
   users: initialUsers,
+  onUserChange,
 }: UserManagementPanelProps) {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const router = useRouter();
+
+  // Update local state when initialUsers changes
+  useEffect(() => {
+    setUsers(initialUsers);
+  }, [initialUsers]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setIsLoading(userId);
@@ -68,6 +75,7 @@ export default function UserManagementPanel({
       }
 
       setUsers(users.filter((user) => user.id !== userId));
+      onUserChange?.();
       toast.success("User deleted successfully");
     } catch (error) {
       toast.error((error as Error).message);
@@ -90,11 +98,18 @@ export default function UserManagementPanel({
         throw new Error("Failed to delete user todos");
       }
 
+      // Update local state
       setUsers(
         users.map((user) =>
           user.id === userId ? { ...user, _count: { todos: 0 } } : user
         )
       );
+
+      onUserChange?.();
+
+      // Refresh the page to update the todos list
+      router.refresh();
+      
       toast.success("All todos deleted for this user");
     } catch (error) {
       toast.error((error as Error).message);
@@ -139,6 +154,7 @@ export default function UserManagementPanel({
                   value={user.role}
                   onChange={(e) => handleRoleChange(user.id, e.target.value)}
                   disabled={isLoading === user.id}
+                  title={`Change role for ${user.name || user.email}`}
                   className="block w-full rounded-md border border-gray-300 bg-white py-1.5 px-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="user">User</option>
