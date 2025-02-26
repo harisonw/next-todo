@@ -41,7 +41,21 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
   },
 
   addTodo: async (title: string) => {
-    set({ isLoading: true, error: null });
+    const optimisticTodo: Todo = {
+      id: Date.now().toString(), // Temporary ID
+      title,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      userId: "", // Will be set by the server
+    };
+
+    // Optimistically add the todo
+    set((state) => ({
+      todos: [optimisticTodo, ...state.todos],
+      isLoading: true,
+      error: null,
+    }));
+
     try {
       const response = await fetch("/api/todos", {
         method: "POST",
@@ -53,15 +67,34 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to add todo");
       }
 
-      // After adding, fetch all todos to ensure we have the latest state
-      await get().fetchTodos();
+      // Replace the optimistic todo with the real one
+      const newTodo = await response.json();
+      set((state) => ({
+        todos: state.todos.map((todo) =>
+          todo.id === optimisticTodo.id ? newTodo : todo
+        ),
+        isLoading: false,
+      }));
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      // Revert the optimistic update on error
+      set((state) => ({
+        todos: state.todos.filter((todo) => todo.id !== optimisticTodo.id),
+        error: (error as Error).message,
+        isLoading: false,
+      }));
     }
   },
 
   toggleTodo: async (id: string, completed: boolean) => {
-    set({ isLoading: true, error: null });
+    // Optimistically update the todo
+    set((state) => ({
+      todos: state.todos.map((todo) =>
+        todo.id === id ? { ...todo, completed } : todo
+      ),
+      isLoading: true,
+      error: null,
+    }));
+
     try {
       const response = await fetch("/api/todos", {
         method: "PUT",
@@ -73,15 +106,33 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to update todo");
       }
 
-      // After toggling, fetch all todos to ensure we have the latest state
-      await get().fetchTodos();
+      const updatedTodo = await response.json();
+      // Update with the server response to ensure consistency
+      set((state) => ({
+        todos: state.todos.map((todo) => (todo.id === id ? updatedTodo : todo)),
+        isLoading: false,
+      }));
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      // Revert the optimistic update on error
+      set((state) => ({
+        todos: state.todos.map((todo) =>
+          todo.id === id ? { ...todo, completed: !completed } : todo
+        ),
+        error: (error as Error).message,
+        isLoading: false,
+      }));
     }
   },
 
   deleteTodo: async (id: string) => {
-    set({ isLoading: true, error: null });
+    // Optimistically remove the todo
+    const deletedTodo = get().todos.find((todo) => todo.id === id);
+    set((state) => ({
+      todos: state.todos.filter((todo) => todo.id !== id),
+      isLoading: true,
+      error: null,
+    }));
+
     try {
       const response = await fetch(`/api/todos?id=${id}`, {
         method: "DELETE",
@@ -91,15 +142,32 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to delete todo");
       }
 
-      // After deleting, fetch all todos to ensure we have the latest state
-      await get().fetchTodos();
+      set({ isLoading: false });
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      // Revert the optimistic delete on error
+      if (deletedTodo) {
+        set((state) => ({
+          todos: [...state.todos, deletedTodo],
+          error: (error as Error).message,
+          isLoading: false,
+        }));
+      }
     }
   },
 
   editTodo: async (id: string, title: string) => {
-    set({ isLoading: true, error: null });
+    // Store the original title for reverting if needed
+    const originalTodo = get().todos.find((todo) => todo.id === id);
+
+    // Optimistically update the todo
+    set((state) => ({
+      todos: state.todos.map((todo) =>
+        todo.id === id ? { ...todo, title } : todo
+      ),
+      isLoading: true,
+      error: null,
+    }));
+
     try {
       const response = await fetch("/api/todos", {
         method: "PUT",
@@ -111,10 +179,22 @@ export const useTodoStore = create<TodoStore>()((set, get) => ({
         throw new Error("Failed to update todo");
       }
 
-      // After editing, fetch all todos to ensure we have the latest state
-      await get().fetchTodos();
+      const updatedTodo = await response.json();
+      set((state) => ({
+        todos: state.todos.map((todo) => (todo.id === id ? updatedTodo : todo)),
+        isLoading: false,
+      }));
     } catch (error) {
-      set({ error: (error as Error).message, isLoading: false });
+      // Revert the optimistic update on error
+      if (originalTodo) {
+        set((state) => ({
+          todos: state.todos.map((todo) =>
+            todo.id === id ? originalTodo : todo
+          ),
+          error: (error as Error).message,
+          isLoading: false,
+        }));
+      }
     }
   },
 }));

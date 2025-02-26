@@ -19,7 +19,10 @@ interface AdminTodoListProps {
   onTodoChange?: () => void;
 }
 
-export default function AdminTodoList({ initialTodos, onTodoChange }: AdminTodoListProps) {
+export default function AdminTodoList({
+  initialTodos,
+  onTodoChange,
+}: AdminTodoListProps) {
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -75,10 +78,10 @@ export default function AdminTodoList({ initialTodos, onTodoChange }: AdminTodoL
 
       // Update local state
       setTodos(todos.filter((todo) => todo.id !== id));
-      
+
       // Notify parent of the change
       onTodoChange?.();
-      
+
       toast.success("Todo deleted successfully");
     } catch (error) {
       toast.error((error as Error).message);

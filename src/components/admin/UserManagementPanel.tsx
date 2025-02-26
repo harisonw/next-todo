@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 interface User {
@@ -109,7 +109,7 @@ export default function UserManagementPanel({
 
       // Refresh the page to update the todos list
       router.refresh();
-      
+
       toast.success("All todos deleted for this user");
     } catch (error) {
       toast.error((error as Error).message);
