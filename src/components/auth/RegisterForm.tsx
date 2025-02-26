@@ -1,5 +1,6 @@
 "use client";
 
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -18,18 +19,30 @@ export function RegisterForm() {
     const name = formData.get("name") as string;
 
     try {
-      const response = await fetch("/api/auth/register", {
+      // Register the user
+      const registerResponse = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),
       });
 
-      if (response.ok) {
-        toast.success("Account created successfully! You can now login.");
-        // Reset the form
-        (event.target as HTMLFormElement).reset();
+      if (registerResponse.ok) {
+        // Use signIn instead of direct API call
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.ok) {
+          toast.success("Account created and logged in successfully!");
+          router.refresh(); // Refresh the page to update auth state
+          router.push("/"); // Redirect to home page
+        } else {
+          toast.error("Account created but failed to log in automatically");
+        }
       } else {
-        const data = await response.json();
+        const data = await registerResponse.json();
         toast.error(data.error || "Failed to register");
       }
     } catch (error) {

@@ -53,6 +53,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
           checked={todo.completed}
           onChange={handleToggle}
           className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:border-gray-600"
+          aria-label={`Mark "${todo.title}" as ${todo.completed ? 'incomplete' : 'complete'}`}
         />
         <div className="flex-1 min-w-0 ml-3">
           {isEditing ? (
@@ -64,6 +65,7 @@ export default function TodoItem({ todo }: TodoItemProps) {
               onKeyDown={handleKeyDown}
               className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
               autoFocus
+              aria-label={`Edit todo item: ${todo.title}`}
             />
           ) : (
             <p

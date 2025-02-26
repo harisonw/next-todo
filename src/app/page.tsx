@@ -1,7 +1,6 @@
 import TodoList from "@/components/TodoList";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default async function Home() {
   const session = await auth();
@@ -21,11 +20,11 @@ export default async function Home() {
             Welcome to the Next.js Todo App
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-lg mx-auto">
-            An elegant, professional todo application built with Next.js 15, featuring user authentication, 
-            dark mode, and an admin panel.
+            An elegant, professional todo application built with Next.js 15,
+            featuring user authentication, dark mode, and an admin panel.
           </p>
-          <Link 
-            href="/login" 
+          <Link
+            href="/login"
             className="inline-block rounded-md bg-indigo-600 px-6 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Get Started

@@ -16,7 +16,7 @@ export default function NewTodoForm() {
       await addTodo(title.trim());
       setTitle("");
       toast.success("Todo added successfully");
-    } catch (error) {
+    } catch {
       // Error handling is done in the store
     }
   };
